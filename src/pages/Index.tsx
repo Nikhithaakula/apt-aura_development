@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,8 +16,11 @@ import {
   Zap
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
+  const { user } = useAuth();
+
   const steps = [
     {
       number: 1,
@@ -125,9 +127,15 @@ const Index = () => {
               Join a thriving ecosystem where students, professionals, startups, and investors 
               come together to build the future.
             </p>
-            <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 text-lg px-8 py-4">
-              Join the Ecosystem
-            </Button>
+            {user ? (
+              <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 text-lg px-8 py-4" asChild>
+                <Link to="/dashboard">Go to Dashboard</Link>
+              </Button>
+            ) : (
+              <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 text-lg px-8 py-4" asChild>
+                <Link to="/auth">Join the Ecosystem</Link>
+              </Button>
+            )}
           </div>
         </div>
       </section>
