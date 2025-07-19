@@ -18,7 +18,8 @@ import {
   LayoutDashboard,
   Briefcase,
   Rocket,
-  MessageSquare
+  MessageSquare,
+  Users // Add Users icon
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -33,6 +34,7 @@ export const Navigation = () => {
     { name: "Projects", href: "/projects", icon: Briefcase },
     { name: "Startups", href: "/startups", icon: Rocket },
     { name: "Feed", href: "/feed", icon: MessageSquare },
+    { name: "Community", href: "/community", icon: Users }, // Add Community link
   ];
 
   const isActive = (href: string) => location.pathname === href;

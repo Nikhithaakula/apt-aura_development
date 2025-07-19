@@ -1,9 +1,12 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { 
   Search, 
   Plus, 
@@ -15,125 +18,215 @@ import {
   ExternalLink,
   Filter
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import type { Database } from "@/integrations/supabase/types";
+import { Link } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+
+const stages = ["All Stages", "Pre-Seed", "Seed", "Series A", "Series B+"];
+const sectors = ["All Sectors", "CleanTech", "EdTech", "HealthTech", "AgriTech", "CyberSecurity", "Logistics"];
 
 const Startups = () => {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  
-  // Mock startups data
-  const startups = [
-    {
-      id: 1,
-      name: "GreenTech Solutions",
-      tagline: "Sustainable technology for a better tomorrow",
-      description: "We're developing IoT solutions to help businesses reduce their carbon footprint through smart energy management and waste reduction systems.",
-      stage: "Seed",
-      sector: "CleanTech",
-      location: "San Francisco, CA",
-      teamSize: 8,
-      founded: "2023",
-      requirements: "Looking for: Senior Backend Developer, Marketing Specialist",
-      acceptingMembers: true,
-      followers: 124,
-      logo: "/placeholder.svg",
-      tags: ["Sustainability", "IoT", "B2B"]
-    },
-    {
-      id: 2,
-      name: "EduConnect",
-      tagline: "Bridging the education gap with AI",
-      description: "AI-powered platform that personalizes learning experiences for students in underserved communities, making quality education accessible to all.",
-      stage: "Series A",
-      sector: "EdTech",
-      location: "Boston, MA",
-      teamSize: 15,
-      founded: "2022",
-      requirements: "Seeking: AI/ML Engineer, UX Designer, Education Specialist",
-      acceptingMembers: true,
-      followers: 89,
-      logo: "/placeholder.svg",
-      tags: ["Education", "AI", "Social Impact"]
-    },
-    {
-      id: 3,
-      name: "HealthWave",
-      tagline: "Democratizing healthcare access",
-      description: "Telemedicine platform connecting rural communities with healthcare professionals, featuring AI-assisted diagnosis and remote monitoring.",
-      stage: "Pre-Seed",
-      sector: "HealthTech",
-      location: "Austin, TX",
-      teamSize: 5,
-      founded: "2024",
-      requirements: "Need: Full-stack Developer, Healthcare Professional, Regulatory Expert",
-      acceptingMembers: true,
-      followers: 67,
-      logo: "/placeholder.svg",
-      tags: ["Healthcare", "Telemedicine", "Rural"]
-    },
-    {
-      id: 4,
-      name: "UrbanFarm",
-      tagline: "Growing the future of food",
-      description: "Vertical farming solutions for urban environments, using advanced hydroponics and LED technology to maximize yield in minimal space.",
-      stage: "Seed",
-      sector: "AgriTech",
-      location: "Seattle, WA",
-      teamSize: 12,
-      founded: "2023",
-      requirements: "Hiring: Hardware Engineer, Plant Scientist, Operations Manager",
-      acceptingMembers: false,
-      followers: 156,
-      logo: "/placeholder.svg",
-      tags: ["Agriculture", "Sustainability", "Urban"]
-    },
-    {
-      id: 5,
-      name: "CyberGuard",
-      tagline: "Next-gen cybersecurity for SMBs",
-      description: "AI-powered cybersecurity platform designed specifically for small and medium businesses, providing enterprise-level protection at affordable prices.",
-      stage: "Series A",
-      sector: "CyberSecurity",
-      location: "New York, NY",
-      teamSize: 22,
-      founded: "2022",
-      requirements: "Looking for: Security Researcher, Sales Engineer, Customer Success Manager",
-      acceptingMembers: true,
-      followers: 203,
-      logo: "/placeholder.svg",
-      tags: ["Security", "AI", "SMB"]
-    },
-    {
-      id: 6,
-      name: "EcoLogistics",
-      tagline: "Sustainable supply chain solutions",
-      description: "Optimizing supply chains for sustainability and efficiency using machine learning algorithms and real-time tracking systems.",
-      stage: "Pre-Seed",
-      sector: "Logistics",
-      location: "Chicago, IL",
-      teamSize: 6,
-      founded: "2024",
-      requirements: "Seeking: Supply Chain Expert, Data Scientist, Business Development",
-      acceptingMembers: true,
-      followers: 45,
-      logo: "/placeholder.svg",
-      tags: ["Logistics", "Sustainability", "ML"]
-    }
-  ];
-
-  const stages = ["All Stages", "Pre-Seed", "Seed", "Series A", "Series B+"];
-  const sectors = ["All Sectors", "CleanTech", "EdTech", "HealthTech", "AgriTech", "CyberSecurity", "Logistics"];
-  
   const [selectedStage, setSelectedStage] = useState("All Stages");
   const [selectedSector, setSelectedSector] = useState("All Sectors");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+  const [startups, setStartups] = useState<Database["public"]["Tables"]["startups"]["Row"][]>([]);
+  const [memberships, setMemberships] = useState<Database["public"]["Tables"]["startup_members"]["Row"][]>([]);
+  const [selectedStartup, setSelectedStartup] = useState<Database["public"]["Tables"]["startups"]["Row"] | null>(null);
+  const [pendingApplications, setPendingApplications] = useState<any[]>([]);
+  // Create startup form state
+  const [form, setForm] = useState({
+    name: "",
+    tagline: "",
+    description: "",
+    mission: "",
+    tech_stack: "",
+    tools: "",
+    sector: "",
+    stage: "",
+    location: "",
+    founded: "",
+    requirements: "",
+    work_mode: "",
+    mediaFiles: [] as File[],
+    mediaUrls: [] as string[],
+  });
+  // Application form state
+  const [applyForm, setApplyForm] = useState({
+    motivation: "",
+    role_applied: "",
+  });
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const { toast } = useToast();
 
+  // Fetch startups
+  useEffect(() => {
+    const fetchStartups = async () => {
+      const { data, error } = await supabase.from("startups").select("*");
+      if (!error && data) setStartups(data);
+    };
+    fetchStartups();
+  }, []);
+
+  // Fetch memberships (for current user and for admin view)
+  useEffect(() => {
+    if (!user) return;
+    const fetchMemberships = async () => {
+      const { data, error } = await supabase.from("startup_members").select("*");
+      if (!error && data) setMemberships(data);
+    };
+    fetchMemberships();
+  }, [user]);
+
+  // Fetch pending applications for admin
+  useEffect(() => {
+    if (!user) return;
+    const fetchPending = async () => {
+      // Find startups owned by user
+      const { data: owned, error: err1 } = await supabase.from("startups").select("id").eq("owner_id", user.id);
+      if (err1 || !owned) return;
+      const startupIds = owned.map(s => s.id);
+      if (startupIds.length === 0) return setPendingApplications([]);
+      // Find pending applications for these startups
+      const { data: pending, error: err2 } = await supabase.from("startup_members").select("*, user:profiles(*)").in("startup_id", startupIds).eq("status", "pending");
+      if (!err2 && pending) setPendingApplications(pending);
+    };
+    fetchPending();
+  }, [user, startups]);
+
+  // Media upload handler
+  const handleMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setForm(f => ({ ...f, mediaFiles: Array.from(e.target.files) }));
+    }
+  };
+
+  // Upload files to Supabase Storage and return URLs
+  const uploadMedia = async (files: File[]) => {
+    const urls: string[] = [];
+    for (const file of files) {
+      const filePath = `startups/${Date.now()}_${file.name}`;
+      const { data, error } = await supabase.storage.from('media').upload(filePath, file);
+      if (!error && data) {
+        const { data: publicUrl } = supabase.storage.from('media').getPublicUrl(filePath);
+        if (publicUrl?.publicUrl) urls.push(publicUrl.publicUrl);
+      }
+    }
+    return urls;
+  };
+
+  // Create startup handler
+  const handleCreateStartup = async () => {
+    if (!user) return;
+    setCreateLoading(true);
+    setCreateError(null);
+    try {
+      const { name, tagline, description, mission, tech_stack, tools, sector, stage, location, founded, requirements, work_mode, mediaFiles } = form;
+      let mediaUrls: string[] = [];
+      if (mediaFiles.length > 0) {
+        mediaUrls = await uploadMedia(mediaFiles);
+      }
+      const { data: startupData, error: startupError } = await supabase.from("startups").insert({
+        name,
+        tagline,
+        description,
+        mission,
+        tech_stack: tech_stack.split(",").map(s => s.trim()),
+        tools: tools.split(",").map(s => s.trim()),
+        sector,
+        stage,
+        location,
+        founded,
+        requirements,
+        work_mode,
+        media: mediaUrls,
+        owner_id: user.id,
+      }).select().single();
+      if (startupError || !startupData) {
+        setCreateError(startupError?.message || "Failed to create startup. Please check your input.");
+        setCreateLoading(false);
+        return;
+      }
+      await supabase.from("startup_members").insert({
+        startup_id: startupData.id,
+        user_id: user.id,
+        role_applied: "admin",
+        motivation: "Startup creator",
+        status: "approved",
+      });
+      setIsCreateModalOpen(false);
+      setForm({ name: "", tagline: "", description: "", mission: "", tech_stack: "", tools: "", sector: "", stage: "", location: "", founded: "", requirements: "", work_mode: "", mediaFiles: [], mediaUrls: [] });
+      const { data } = await supabase.from("startups").select("*");
+      if (data) setStartups(data);
+    } catch (err: any) {
+      setCreateError(err.message || "Unexpected error occurred.");
+    }
+    setCreateLoading(false);
+  };
+
+  // Apply to startup handler
+  const handleApply = async () => {
+    if (!user || !selectedStartup) return;
+    // Prevent duplicate requests
+    const alreadyApplied = memberships.some(m => m.startup_id === selectedStartup.id && m.user_id === user.id);
+    if (alreadyApplied) {
+      toast({ title: "Already Applied", description: "You have already applied to this startup.", variant: "destructive" });
+      return;
+    }
+    const { motivation, role_applied } = applyForm;
+    // Assign admin_id as the startup owner
+    const admin_id = selectedStartup.owner_id;
+    const { error } = await supabase.from("startup_members").insert({
+      startup_id: selectedStartup.id,
+      user_id: user.id,
+      motivation,
+      role_applied,
+      status: "pending",
+    });
+    if (!error) {
+      setIsApplyModalOpen(false);
+      setApplyForm({ motivation: "", role_applied: "" });
+      toast({ title: "Application Submitted", description: "Your request (with your profile link) has been sent to the startup admin." });
+    } else {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
+  // Approve/reject application
+  const handleDecision = async (id: string, status: "approved" | "rejected") => {
+    await supabase.from("startup_members").update({ status }).eq("id", id);
+    // Refresh pending applications
+    if (user) {
+      const { data: owned } = await supabase.from("startups").select("id").eq("owner_id", user.id);
+      const startupIds = owned?.map(s => s.id) || [];
+      const { data: pending } = await supabase.from("startup_members").select("*, user:profiles(*)").in("startup_id", startupIds).eq("status", "pending");
+      if (pending) setPendingApplications(pending);
+    }
+  };
+
+  // Filtered startups
   const filteredStartups = startups.filter(startup => {
-    const matchesSearch = startup.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         startup.tagline.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         startup.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         startup.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesSearch = (startup.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (startup.tagline || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (startup.description || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (startup.sector || "").toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStage = selectedStage === "All Stages" || startup.stage === selectedStage;
     const matchesSector = selectedSector === "All Sectors" || startup.sector === selectedSector;
     return matchesSearch && matchesStage && matchesSector;
   });
+
+  // Members for a startup
+  const getMembers = (startupId: string) =>
+    memberships.filter(m => m.startup_id === startupId && m.status === "approved");
+
+  // Has user applied?
+  const hasApplied = (startupId: string) =>
+    memberships.some(m => m.startup_id === startupId && m.user_id === user?.id);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -143,13 +236,106 @@ const Startups = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Explore Startups</h1>
           <p className="text-gray-600">Discover innovative startups and join their journey</p>
         </div>
-        
-        <Button className="mt-4 sm:mt-0">
-          <Plus className="w-4 h-4 mr-2" />
-          Register Startup
-        </Button>
+        <Dialog open={isCreateModalOpen} onOpenChange={(open) => { setIsCreateModalOpen(open); if (open) setCreateError(null); }}>
+          <DialogTrigger asChild>
+            <Button className="mt-4 sm:mt-0">
+              <Plus className="w-4 h-4 mr-2" />
+              Register Startup
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Register New Startup</DialogTitle>
+              <p className="text-gray-500 text-sm mt-1">Fill in the details to register your startup. Fields marked * are required.</p>
+            </DialogHeader>
+            {createError && <div className="text-red-600 text-sm mb-2">{createError}</div>}
+            <form className="space-y-6">
+              {/* Basic Info */}
+              <div>
+                <h3 className="font-semibold mb-2">Basic Information</h3>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Startup Name *</Label>
+                  <Input id="name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Enter startup name" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tagline">Tagline</Label>
+                  <Input id="tagline" value={form.tagline} onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))} placeholder="A short tagline (optional)" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description *</Label>
+                  <Textarea id="description" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Describe your startup..." rows={3} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="mission">Mission / What do you want to achieve?</Label>
+                  <Textarea id="mission" value={form.mission} onChange={e => setForm(f => ({ ...f, mission: e.target.value }))} placeholder="Describe the mission or goal of your startup..." rows={2} />
+                </div>
+              </div>
+              <hr />
+              {/* Tech & Work */}
+              <div>
+                <h3 className="font-semibold mb-2">Tech & Work</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="tech_stack">Technologies *</Label>
+                    <Input id="tech_stack" value={form.tech_stack} onChange={e => setForm(f => ({ ...f, tech_stack: e.target.value }))} placeholder="e.g., React, Node.js, Python" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tools">Tools</Label>
+                    <Input id="tools" value={form.tools} onChange={e => setForm(f => ({ ...f, tools: e.target.value }))} placeholder="e.g., Figma, GitHub, Slack" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sector">Sector *</Label>
+                    <Input id="sector" value={form.sector} onChange={e => setForm(f => ({ ...f, sector: e.target.value }))} placeholder="e.g., HealthTech, EdTech" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="stage">Stage</Label>
+                    <Input id="stage" value={form.stage} onChange={e => setForm(f => ({ ...f, stage: e.target.value }))} placeholder="e.g., Seed, Series A" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="work_mode">Preferred Way of Work</Label>
+                    <Input id="work_mode" value={form.work_mode} onChange={e => setForm(f => ({ ...f, work_mode: e.target.value }))} placeholder="e.g., Remote, Hybrid, In-person, Async" />
+                  </div>
+                </div>
+              </div>
+              <hr />
+              {/* Details */}
+              <div>
+                <h3 className="font-semibold mb-2">Details</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="location">Location</Label>
+                    <Input id="location" value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="e.g., San Francisco, CA" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="founded">Founded</Label>
+                    <Input id="founded" value={form.founded} onChange={e => setForm(f => ({ ...f, founded: e.target.value }))} placeholder="e.g., 2023" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="requirements">Requirements</Label>
+                    <Input id="requirements" value={form.requirements} onChange={e => setForm(f => ({ ...f, requirements: e.target.value }))} placeholder="e.g., Looking for Backend Developer" />
+                  </div>
+                </div>
+              </div>
+              <hr />
+              {/* Media */}
+              <div>
+                <h3 className="font-semibold mb-2">Media</h3>
+                <div className="space-y-2">
+                  <Label htmlFor="media">Images/Videos (optional)</Label>
+                  <Input id="media" type="file" multiple accept="image/*,video/*" onChange={handleMediaChange} />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 mt-4">
+                <Button type="button" variant="outline" onClick={() => setIsCreateModalOpen(false)}>Cancel</Button>
+                <Button type="button" onClick={handleCreateStartup} disabled={createLoading}>
+                  {createLoading ? <span className="animate-spin mr-2">⏳</span> : null}
+                  Register Startup
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
-
       {/* Search and Filters */}
       <div className="bg-white rounded-lg shadow-sm border p-6 mb-8 space-y-4">
         <div className="flex flex-col sm:flex-row gap-4">
@@ -167,7 +353,6 @@ const Startups = () => {
             Advanced Filters
           </Button>
         </div>
-        
         {/* Stage and Sector filters */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -185,7 +370,6 @@ const Startups = () => {
               ))}
             </div>
           </div>
-          
           <div>
             <p className="text-sm font-medium text-gray-700 mb-2">Sector</p>
             <div className="flex flex-wrap gap-2">
@@ -203,115 +387,143 @@ const Startups = () => {
           </div>
         </div>
       </div>
-
       {/* Results count */}
       <div className="mb-6">
         <p className="text-gray-600">
           Showing {filteredStartups.length} of {startups.length} startups
         </p>
       </div>
-
       {/* Startups Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {filteredStartups.map((startup) => (
-          <Card key={startup.id} className="hover:shadow-lg transition-shadow duration-300">
-            <CardHeader>
-              <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span className="text-white font-bold text-lg">
-                    {startup.name.split(' ').map(n => n[0]).join('')}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <CardTitle className="text-lg truncate">{startup.name}</CardTitle>
-                    <Badge variant={startup.acceptingMembers ? "default" : "secondary"}>
-                      {startup.stage}
-                    </Badge>
+          <Link key={startup.id} to={`/startups/${startup.id}`} className="block focus:outline-none focus:ring-2 focus:ring-primary rounded">
+            <Card key={startup.id} className="hover:shadow-lg transition-shadow duration-300">
+              <CardHeader>
+                <div className="flex items-start space-x-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span className="text-white font-bold text-lg">
+                      {startup.name.split(' ').map(n => n[0]).join('')}
+                    </span>
                   </div>
-                  <p className="text-sm text-gray-600 mb-2">{startup.tagline}</p>
-                  <div className="flex items-center space-x-4 text-xs text-gray-500">
-                    <div className="flex items-center">
-                      <MapPin className="w-3 h-3 mr-1" />
-                      <span>{startup.location}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <CardTitle className="text-lg truncate">{startup.name}</CardTitle>
+                      <Badge variant="default">{startup.stage}</Badge>
                     </div>
-                    <div className="flex items-center">
-                      <Users className="w-3 h-3 mr-1" />
-                      <span>{startup.teamSize} team</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Calendar className="w-3 h-3 mr-1" />
-                      <span>Est. {startup.founded}</span>
+                    <p className="text-sm text-gray-600 mb-2">{startup.tagline}</p>
+                    <div className="flex items-center space-x-4 text-xs text-gray-500">
+                      <div className="flex items-center">
+                        <MapPin className="w-3 h-3 mr-1" />
+                        <span>{startup.location}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Calendar className="w-3 h-3 mr-1" />
+                        <span>Est. {startup.founded}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </CardHeader>
-            
-            <CardContent className="space-y-4">
-              <p className="text-gray-700 text-sm leading-relaxed">
-                {startup.description}
-              </p>
-              
-              {/* Tags */}
-              <div className="flex flex-wrap gap-1">
-                {startup.tags.map((tag) => (
-                  <Badge key={tag} variant="outline" className="text-xs">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-              
-              {/* Requirements */}
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-xs font-semibold text-gray-500 mb-1">CURRENT OPENINGS</p>
-                <p className="text-sm text-gray-700">{startup.requirements}</p>
-              </div>
-              
-              {/* Stats and actions */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4 text-sm text-gray-500">
-                  <div className="flex items-center">
-                    <Heart className="w-4 h-4 mr-1" />
-                    <span>{startup.followers} followers</span>
-                  </div>
-                  <div className="flex items-center">
-                    <TrendingUp className="w-4 h-4 mr-1" />
-                    <span>{startup.sector}</span>
-                  </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-gray-700 text-sm leading-relaxed">{startup.description}</p>
+                <div>
+                  <span className="font-medium text-xs text-gray-500">Mission: </span>{startup.mission}
                 </div>
-                
-                <div className="flex space-x-2">
-                  {startup.acceptingMembers ? (
-                    <Button size="sm">
-                      Request to Join Team
-                    </Button>
-                  ) : (
-                    <Button size="sm" variant="outline">
-                      Follow Updates
-                    </Button>
-                  )}
-                  <Button size="sm" variant="ghost">
-                    <ExternalLink className="w-4 h-4" />
+                <div>
+                  <span className="font-medium text-xs text-gray-500">Technologies: </span>{(startup.tech_stack || []).join(", ")}
+                </div>
+                <div>
+                  <span className="font-medium text-xs text-gray-500">Tools: </span>{(startup.tools || []).join(", ")}
+                </div>
+                <div>
+                  <span className="font-medium text-xs text-gray-500">Work Mode: </span>{startup.work_mode}
+                </div>
+                <div>
+                  <span className="font-medium text-xs text-gray-500">Sector: </span>{startup.sector}
+                </div>
+                <div>
+                  <span className="font-medium text-xs text-gray-500">Stage: </span>{startup.stage}
+                </div>
+                <div>
+                  <span className="font-medium text-xs text-gray-500">Requirements: </span>{startup.requirements}
+                </div>
+                {/* Media */}
+                {startup.media && startup.media.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {startup.media.map((url, i) => (
+                      url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                        <img key={i} src={url} alt="media" className="w-24 h-24 object-cover rounded" />
+                      ) : (
+                        <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">View Video</a>
+                      )
+                    ))}
+                  </div>
+                )}
+                {/* Members */}
+                <div>
+                  <span className="font-medium text-xs text-gray-500">Members: </span>
+                  {getMembers(startup.id).map((m, i) => (
+                    <span key={i} className="mr-2">{m.user_id === user?.id ? "You" : m.user_id}</span>
+                  ))}
+                </div>
+                {/* Apply button */}
+                {user && startup.owner_id !== user.id && !hasApplied(startup.id) && (
+                  <Button size="sm" onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setSelectedStartup(startup);
+                    setIsApplyModalOpen(true);
+                  }}>
+                    Apply to Join
                   </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                )}
+                {user && hasApplied(startup.id) && <span className="text-xs text-blue-500">Applied</span>}
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
-
-      {/* Empty state */}
-      {filteredStartups.length === 0 && (
-        <div className="text-center py-12">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Search className="w-8 h-8 text-gray-400" />
+      {/* Application Modal */}
+      <Dialog open={isApplyModalOpen} onOpenChange={setIsApplyModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Apply to Join Startup</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="motivation">Motivation</Label>
+              <Textarea id="motivation" value={applyForm.motivation} onChange={e => setApplyForm(f => ({ ...f, motivation: e.target.value }))} placeholder="Why do you want to join?" rows={3} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="role">Role Applied For</Label>
+              <Input id="role" value={applyForm.role_applied} onChange={e => setApplyForm(f => ({ ...f, role_applied: e.target.value }))} placeholder="e.g., Backend Developer" />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setIsApplyModalOpen(false)}>Cancel</Button>
+              <Button onClick={handleApply}>Submit Application</Button>
+            </div>
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No startups found</h3>
-          <p className="text-gray-600 mb-4">
-            Try adjusting your search terms or filters to discover more startups.
-          </p>
-          <Button variant="outline">Clear Filters</Button>
+        </DialogContent>
+      </Dialog>
+      {/* Admin: Pending Applications */}
+      {user && pendingApplications.length > 0 && (
+        <div className="mt-12">
+          <h2 className="text-xl font-bold mb-4">Pending Applications (Admin)</h2>
+          <div className="space-y-4">
+            {pendingApplications.map((app, i) => (
+              <div key={i} className="border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between">
+                <div>
+                  <div className="font-semibold">Applicant: {app.user?.full_name || app.user_id}</div>
+                  <div className="text-xs text-gray-500">Motivation: {app.motivation}</div>
+                  <div className="text-xs text-gray-500">Role: {app.role_applied}</div>
+                </div>
+                <div className="flex gap-2 mt-2 sm:mt-0">
+                  <Button size="sm" variant="default" onClick={() => handleDecision(app.id, "approved")}>Approve</Button>
+                  <Button size="sm" variant="destructive" onClick={() => handleDecision(app.id, "rejected")}>Reject</Button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

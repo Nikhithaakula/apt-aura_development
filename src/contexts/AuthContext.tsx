@@ -50,29 +50,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, fullName: string, role: string) => {
     const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          full_name: fullName,
-          role: role
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            full_name: fullName,
+            role: role
+          }
         }
+      });
+      if (error) {
+        console.error('Supabase signUp error:', error);
       }
-    });
-    
-    return { error };
+      return { error };
+    } catch (err) {
+      console.error('Unexpected signUp error:', err);
+      return { error: err };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    
-    return { error };
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) {
+        console.error('Supabase signIn error:', error);
+      }
+      return { error };
+    } catch (err) {
+      console.error('Unexpected signIn error:', err);
+      return { error: err };
+    }
   };
 
   const signOut = async () => {

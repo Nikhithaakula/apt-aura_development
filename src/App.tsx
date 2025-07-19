@@ -15,6 +15,11 @@ import Startups from "./pages/Startups";
 import Feed from "./pages/Feed";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import ProjectDetail from "./pages/ProjectDetail";
+import ProjectEdit from "./pages/ProjectEdit";
+import StartupDetail from "./pages/StartupDetail";
+import StartupEdit from "./pages/StartupEdit";
+import Community from "./pages/Community";
 
 const queryClient = new QueryClient();
 
@@ -66,11 +71,65 @@ const App = () => (
                 } 
               />
               <Route 
+                path="/community" 
+                element={
+                  <ProtectedRoute>
+                    <Navigation />
+                    <Community />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
                 path="/profile" 
                 element={
                   <ProtectedRoute>
                     <Navigation />
                     <Profile />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/profile/:id" 
+                element={
+                  <ProtectedRoute>
+                    <Navigation />
+                    <Profile />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/projects/:id" 
+                element={
+                  <ProtectedRoute>
+                    <Navigation />
+                    <ProjectDetail />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/projects/:id/edit" 
+                element={
+                  <ProtectedRoute>
+                    <Navigation />
+                    <ProjectEdit />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/startups/:id" 
+                element={
+                  <ProtectedRoute>
+                    <Navigation />
+                    <StartupDetail />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/startups/:id/edit" 
+                element={
+                  <ProtectedRoute>
+                    <Navigation />
+                    <StartupEdit />
                   </ProtectedRoute>
                 } 
               />
