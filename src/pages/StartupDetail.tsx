@@ -78,35 +78,93 @@ const StartupDetail = () => {
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <Button asChild variant="outline" className="mb-4"><Link to="/startups">Back to Startups</Link></Button>
-      <Card>
-        <CardHeader>
-          <CardTitle>{startup.name}</CardTitle>
-          <div className="flex gap-2 mt-2">
-            <Badge>{startup.sector}</Badge>
-            <Badge>{startup.stage}</Badge>
+      <Card className="shadow-lg">
+        {/* Header */}
+        <div className="flex items-center gap-4 p-6 border-b bg-gradient-to-r from-blue-50 to-green-50 rounded-t-2xl">
+          {startup.logo ? (
+            <img src={startup.logo} alt="logo" className="w-14 h-14 rounded-lg object-cover border" />
+          ) : (
+            <div className="w-14 h-14 bg-gradient-to-r from-blue-500 to-green-500 rounded-lg flex items-center justify-center text-white font-bold text-2xl">
+              {startup.name.split(' ').map((n: string) => n[0]).join('')}
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold truncate text-gray-900">{startup.name}</h1>
+              <Badge variant="default">{startup.stage}</Badge>
+            </div>
+            <div className="flex gap-2 mt-1 text-xs text-gray-500">
+              {startup.sector && <Badge variant="secondary">{startup.sector}</Badge>}
+              {startup.location && <span>{startup.location}</span>}
+              {startup.founded && <span>Est. {startup.founded}</span>}
+            </div>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div><span className="font-semibold">Tagline:</span> {startup.tagline}</div>
-          <div><span className="font-semibold">Description:</span> {startup.description}</div>
-          <div><span className="font-semibold">Mission:</span> {startup.mission}</div>
-          <div className="font-semibold text-xs text-gray-500 mb-1">Technologies</div>
-          <div className="flex flex-wrap gap-2 mb-2">{(startup.tech_stack || []).map((tech: string, i: number) => (<Badge key={i} variant="default">{tech}</Badge>))}</div>
-          <div className="font-semibold text-xs text-gray-500 mb-1">Tools</div>
-          <div className="flex flex-wrap gap-2 mb-2">{(startup.tools || []).map((tool: string, i: number) => (<Badge key={i} variant="default">{tool}</Badge>))}</div>
-          <div className="font-semibold text-xs text-gray-500 mb-1">Sector</div>
-          <Badge variant="default">{startup.sector}</Badge>
-          <div><span className="font-semibold">Work Mode:</span> {startup.work_mode}</div>
-          <div><span className="font-semibold">Location:</span> {startup.location}</div>
-          <div><span className="font-semibold">Founded:</span> {startup.founded}</div>
-          <div><span className="font-semibold">Requirements:</span> {startup.requirements}</div>
+        </div>
+        <CardContent className="space-y-6 p-6">
+          {startup.tagline && <div className="text-lg text-gray-700 font-semibold">{startup.tagline}</div>}
+          {startup.website && (
+            <div className="mb-2">
+              <a href={startup.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1">
+                {startup.website}
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 3h7m0 0v7m0-7L10 14m-4 0h4v4" /></svg>
+              </a>
+            </div>
+          )}
+          <div>
+            <div className="font-semibold text-gray-800 mb-1">Description</div>
+            <div className="text-gray-700 text-base whitespace-pre-line text-justify">{startup.description}</div>
+          </div>
+          {startup.mission && (
+            <div>
+              <div className="font-semibold text-gray-800 mb-1">Mission</div>
+              <div className="text-gray-700 text-base whitespace-pre-line text-justify">{startup.mission}</div>
+            </div>
+          )}
+           {/* Requirements Section */}
+           {startup.requirements && (
+            <div>
+              <div className="font-semibold text-gray-800 mb-1">Requirements</div>
+              <div className="text-gray-700 text-sm text-justify whitespace-pre-line">{startup.requirements}</div>
+            </div>
+          )}
+
+           {/* Custom Sections */}
+           {startup.customsections && startup.customsections.length > 0 && (
+            <div>
+              <div className="font-semibold text-xs text-gray-500 mb-1 mt-4">Additional Sections</div>
+              <div className="space-y-2 text-gray-700 text-sm">
+                {startup.customsections.map((section: any, i: number) => (
+                  <div key={i} className="text-justify"><span className="font-semibold">{section.title}:</span> {section.content}</div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <div className="font-semibold text-xs text-gray-500 mb-1">Technologies</div>
+              <div className="flex flex-wrap gap-2 mb-2">{(startup.tech_stack || []).map((tech: string, i: number) => (<Badge key={i} variant="default">{tech}</Badge>))}</div>
+            </div>
+            <div>
+              <div className="font-semibold text-xs text-gray-500 mb-1">Tools</div>
+              <div className="flex flex-wrap gap-2 mb-2">{(startup.tools || []).map((tool: string, i: number) => (<Badge key={i} variant="secondary">{tool}</Badge>))}</div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <div className="font-semibold text-xs text-gray-500 mb-1">Work Mode</div>
+              <div className="text-gray-700 text-sm">{startup.work_mode}</div>
+            </div>
+          </div>
+         
+          <hr />
           {/* Timeline Section */}
           {startup.timeline && startup.timeline.length > 0 && (
             <div>
               <div className="font-semibold text-xs text-gray-500 mb-1 mt-4">Timeline</div>
-              <ol className="list-decimal ml-6 space-y-1">
+              <ol className="list-decimal ml-6 space-y-1 text-gray-700 text-sm">
                 {startup.timeline.map((item: any, i: number) => (
-                  <li key={i}><span className="font-semibold">{item.title}:</span> {item.content}</li>
+                  <li key={i} className="text-justify"><span className="font-semibold">{item.title}:</span> {item.content}</li>
                 ))}
               </ol>
             </div>
@@ -115,24 +173,14 @@ const StartupDetail = () => {
           {startup.teams && startup.teams.length > 0 && (
             <div>
               <div className="font-semibold text-xs text-gray-500 mb-1 mt-4">Teams</div>
-              <ul className="list-disc ml-6 space-y-1">
+              <ul className="list-disc ml-6 space-y-1 text-gray-700 text-sm">
                 {startup.teams.map((team: any, i: number) => (
-                  <li key={i}><span className="font-semibold">{team.name}:</span> {team.objective}</li>
+                  <li key={i} className="text-justify"><span className="font-semibold">{team.name}:</span> {team.objective}</li>
                 ))}
               </ul>
             </div>
           )}
-          {/* Custom Sections */}
-          {startup.customsections && startup.customsections.length > 0 && (
-            <div>
-              <div className="font-semibold text-xs text-gray-500 mb-1 mt-4">Additional Sections</div>
-              <div className="space-y-2">
-                {startup.customsections.map((section: any, i: number) => (
-                  <div key={i}><span className="font-semibold">{section.title}:</span> {section.content}</div>
-                ))}
-              </div>
-            </div>
-          )}
+         
           {/* Media Section */}
           {startup.media && startup.media.length > 0 && (
             <div>
@@ -141,9 +189,9 @@ const StartupDetail = () => {
                 {startup.media.map((url: string, i: number) => {
                   const isVideo = url.match(/\.(mp4|webm|ogg)$/i);
                   return isVideo ? (
-                    <video key={i} src={url} controls className="w-full h-100 object-cover rounded border" style={{ background: '#000' }} />
+                    <video key={i} src={url} controls className="w-32 h-24 object-cover rounded border bg-black" />
                   ) : (
-                    <img key={i} src={url} alt="Startup media" className="w-full h-100 object-cover rounded border" />
+                    <img key={i} src={url} alt="Startup media" className="w-32 h-24 object-cover rounded border" />
                   );
                 })}
               </div>
@@ -151,8 +199,12 @@ const StartupDetail = () => {
           )}
           {/* Members */}
           <div>
-            <span className="font-semibold">Members:</span>
-            {members.map((m, i) => (<span key={i} className="ml-2">{m.user?.full_name || m.user_id}</span>))}
+            <div className="font-semibold text-xs text-gray-500 mb-1">Members</div>
+            <div className="flex flex-wrap gap-2">
+              {members.map((m, i) => (
+                <span key={i} className="bg-gray-100 text-gray-700 px-2 py-1 rounded">{m.user?.full_name || m.user_id}</span>
+              ))}
+            </div>
           </div>
           {/* Apply to Join Startup button for non-owners */}
           {user && user.id !== startup.owner_id && !hasAppliedOrMember && (

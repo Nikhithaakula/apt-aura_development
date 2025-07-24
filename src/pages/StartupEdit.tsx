@@ -15,6 +15,8 @@ const StartupEdit = () => {
   const defaultTeam = { name: "", objective: "" };
   const [form, setForm] = useState<any>(null);
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchStartup = async () => {
@@ -39,6 +41,14 @@ const StartupEdit = () => {
       }
     }
     return urls;
+  };
+
+  // Logo upload handler
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setLogoFile(e.target.files[0]);
+      setLogoPreview(URL.createObjectURL(e.target.files[0]));
+    }
   };
 
   // Add section/team handlers
@@ -74,6 +84,15 @@ const StartupEdit = () => {
       const uploaded = await uploadMedia(mediaFiles);
       mediaUrls = [...mediaUrls, ...uploaded];
     }
+    let logoUrl = form.logo || null;
+    if (logoFile) {
+      const filePath = `startups/logo_${Date.now()}_${logoFile.name}`;
+      const { data, error } = await supabase.storage.from('media').upload(filePath, logoFile);
+      if (!error && data) {
+        const { data: publicUrl } = supabase.storage.from('media').getPublicUrl(filePath);
+        if (publicUrl?.publicUrl) logoUrl = publicUrl.publicUrl;
+      }
+    }
     const updateObj: any = {
       ...form,
       tech_stack: typeof form.tech_stack === 'string' ? form.tech_stack.split(",").map((s: string) => s.trim()) : form.tech_stack,
@@ -82,6 +101,7 @@ const StartupEdit = () => {
       timeline: form.timeline,
       teams: form.teams,
       customsections: form.customsections,
+      logo: logoUrl,
     };
     const { error } = await supabase.from("startups").update(updateObj).eq("id", id);
     if (!error) navigate(`/startups/${id}`);
@@ -93,6 +113,23 @@ const StartupEdit = () => {
     <div className="max-w-3xl mx-auto px-4 py-8">
       <h2 className="text-2xl font-bold mb-4">Edit Startup</h2>
       <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+        {/* Logo Upload */}
+        <div className="space-y-2">
+          <Label>Logo</Label>
+          {form.logo && !logoPreview && (
+            <div className="mb-2 flex items-center gap-2">
+              <img src={form.logo} alt="logo" className="w-16 h-16 object-cover rounded" />
+              <Button type="button" variant="destructive" size="sm" onClick={() => setForm((f: any) => ({ ...f, logo: null }))}>Remove</Button>
+            </div>
+          )}
+          {logoPreview && (
+            <div className="mb-2 flex items-center gap-2">
+              <img src={logoPreview} alt="logo preview" className="w-16 h-16 object-cover rounded" />
+              <Button type="button" variant="destructive" size="sm" onClick={() => { setLogoFile(null); setLogoPreview(null); }}>Remove</Button>
+            </div>
+          )}
+          <Input type="file" accept="image/*" onChange={handleLogoChange} />
+        </div>
         <div className="space-y-2">
           <Label>Name</Label>
           <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
@@ -102,12 +139,16 @@ const StartupEdit = () => {
           <Input value={form.tagline} onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))} />
         </div>
         <div className="space-y-2">
+          <Label>Website</Label>
+          <Input value={form.website || ''} onChange={e => setForm(f => ({ ...f, website: e.target.value }))} placeholder="https://yourstartup.com" />
+        </div>
+        <div className="space-y-2">
           <Label>Description</Label>
-          <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+          <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="text-justify" />
         </div>
         <div className="space-y-2">
           <Label>Mission</Label>
-          <Textarea value={form.mission} onChange={e => setForm(f => ({ ...f, mission: e.target.value }))} />
+          <Textarea value={form.mission} onChange={e => setForm(f => ({ ...f, mission: e.target.value }))} className="text-justify" />
         </div>
         <div className="space-y-2">
           <Label>Technologies</Label>
@@ -129,9 +170,10 @@ const StartupEdit = () => {
           <Label>Founded</Label>
           <Input value={form.founded} onChange={e => setForm(f => ({ ...f, founded: e.target.value }))} />
         </div>
+        {/* Requirements Section */}
         <div className="space-y-2">
           <Label>Requirements</Label>
-          <Input value={form.requirements} onChange={e => setForm(f => ({ ...f, requirements: e.target.value }))} />
+          <Textarea value={form.requirements} onChange={e => setForm(f => ({ ...f, requirements: e.target.value }))} className="text-justify" />
         </div>
         <div className="space-y-2">
           <Label>Sector</Label>
@@ -195,10 +237,11 @@ const StartupEdit = () => {
                 value={section.title}
                 onChange={e => handleSectionChange(idx, "title", e.target.value, "customsections")}
               />
-              <Input
+              <Textarea
                 placeholder="Section Content"
                 value={section.content}
                 onChange={e => handleSectionChange(idx, "content", e.target.value, "customsections")}
+                className="text-justify"
               />
               <Button type="button" variant="destructive" onClick={() => removeSection(idx, "customsections")}>Remove</Button>
             </div>

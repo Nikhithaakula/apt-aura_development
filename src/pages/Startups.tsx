@@ -396,75 +396,63 @@ const Startups = () => {
       {/* Startups Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {filteredStartups.map((startup) => (
-          <Card key={startup.id} className="mb-8 shadow-lg">
-            <CardContent className="p-6 flex-1 flex flex-col">
-              <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span className="text-white font-bold text-lg">
-                    {startup.name.split(' ').map(n => n[0]).join('')}
-                  </span>
-                </div>
+          <Card key={startup.id} className="hover:shadow-lg transition-shadow flex flex-col h-full">
+            <CardContent className="p-6 flex flex-col h-full">
+              <div className="flex items-center mb-2">
+                {startup.logo ? (
+                  <img src={startup.logo} alt="logo" className="w-12 h-12 rounded-lg object-cover mr-4 border" />
+                ) : (
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-green-500 rounded-lg flex items-center justify-center mr-4">
+                    <span className="text-white font-bold text-lg">{startup.name.split(' ').map(n => n[0]).join('')}</span>
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <CardTitle className="text-lg truncate">{startup.name}</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-semibold truncate">{startup.name}</h3>
                     <Badge variant="default">{startup.stage}</Badge>
                   </div>
-                  <p className="text-sm text-gray-600 mb-2">{startup.tagline}</p>
-                  <div className="flex items-center space-x-4 text-xs text-gray-500">
-                    <div className="flex items-center">
-                      <MapPin className="w-3 h-3 mr-1" />
-                      <span>{startup.location}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Calendar className="w-3 h-3 mr-1" />
-                      <span>Est. {startup.founded}</span>
-                    </div>
+                  <div className="text-xs text-gray-500 flex gap-4 mt-1">
+                    {startup.location && <span className="flex items-center"><MapPin className="w-3 h-3 mr-1" />{startup.location}</span>}
+                    {startup.founded && <span className="flex items-center"><Calendar className="w-3 h-3 mr-1" />Est. {startup.founded}</span>}
                   </div>
                 </div>
               </div>
-              <div className="space-y-4">
-                <p className="text-gray-700 text-sm leading-relaxed">{startup.description}</p>
-                <div>
-                  <span className="font-medium text-xs text-gray-500">Mission: </span>{startup.mission}
-                </div>
-                <div>
-                  <span className="font-medium text-xs text-gray-500">Technologies: </span>{(startup.tech_stack || []).join(", ")}
-                </div>
-                <div>
-                  <span className="font-medium text-xs text-gray-500">Tools: </span>{(startup.tools || []).join(", ")}
-                </div>
-                <div>
-                  <span className="font-medium text-xs text-gray-500">Work Mode: </span>{startup.work_mode}
-                </div>
-                <div>
-                  <span className="font-medium text-xs text-gray-500">Sector: </span>{startup.sector}
-                </div>
-                <div>
-                  <span className="font-medium text-xs text-gray-500">Stage: </span>{startup.stage}
-                </div>
-                <div>
-                  <span className="font-medium text-xs text-gray-500">Requirements: </span>{startup.requirements}
-                </div>
-                {/* Media */}
-                {startup.media && startup.media.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {startup.media.map((url, i) => (
-                      url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                        <img key={i} src={url} alt="media" className="w-24 h-24 object-cover rounded" />
-                      ) : (
-                        <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">View Video</a>
-                      )
-                    ))}
-                  </div>
+              {startup.tagline && <div className="text-sm text-gray-600 mb-2 truncate">{startup.tagline}</div>}
+              <div className="mb-2">
+                <span className="font-semibold text-gray-800">Description: </span>
+                <span className="text-gray-700 text-sm line-clamp-3">{startup.description}</span>
+              </div>
+              {startup.mission && (
+                <div className="mb-1"><span className="font-semibold text-gray-800">Mission: </span><span className="text-gray-700 text-sm line-clamp-2">{startup.mission}</span></div>
+              )}
+              <div className="flex flex-wrap gap-2 text-xs mb-2">
+                {Array.isArray(startup.tech_stack) && startup.tech_stack.length > 0 && (
+                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">{startup.tech_stack.join(", ")}</span>
                 )}
-                {/* Members */}
-                <div>
-                  <span className="font-medium text-xs text-gray-500">Members: </span>
-                  {getMembers(startup.id).map((m, i) => (
-                    <span key={i} className="mr-2">{m.user_id === user?.id ? "You" : m.user_id}</span>
-                  ))}
-                </div>
-                {/* Apply button */}
+                {Array.isArray(startup.tools) && startup.tools.length > 0 && (
+                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded">{startup.tools.join(", ")}</span>
+                )}
+                {startup.work_mode && <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded">{startup.work_mode}</span>}
+                {startup.sector && <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">{startup.sector}</span>}
+                {startup.requirements && <span className="bg-pink-100 text-pink-800 px-2 py-1 rounded">{startup.requirements}</span>}
+              </div>
+              <div className="flex flex-wrap gap-2 text-xs mb-2">
+                {startup.media && startup.media.length > 0 && startup.media.map((url, i) => (
+                  url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                    <img key={i} src={url} alt="media" className="w-12 h-12 object-cover rounded" />
+                  ) : (
+                    <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">View Video</a>
+                  )
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-2 text-xs mb-2">
+                <span className="font-semibold text-gray-800">Members:</span>
+                {getMembers(startup.id).map((m, i) => (
+                  <span key={i} className="bg-gray-100 text-gray-700 px-2 py-1 rounded">{m.user_id === user?.id ? "You" : m.user_id}</span>
+                ))}
+              </div>
+              <div className="flex items-center justify-between mt-auto pt-2">
+                <Link to={"/startups/" + startup.id} className="text-blue-600 hover:underline text-sm font-medium">View Startup</Link>
                 {user && startup.owner_id !== user.id && !hasApplied(startup.id) && (
                   <Button size="sm" onClick={(e) => {
                     e.preventDefault();
