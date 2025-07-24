@@ -20,6 +20,7 @@ import ProjectEdit from "./pages/ProjectEdit";
 import StartupDetail from "./pages/StartupDetail";
 import StartupEdit from "./pages/StartupEdit";
 import Community from "./pages/Community";
+import About from "./pages/About";
 
 const queryClient = new QueryClient();
 
@@ -133,6 +134,7 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
+              <Route path="/about" element={<About />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>

@@ -396,35 +396,33 @@ const Startups = () => {
       {/* Startups Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {filteredStartups.map((startup) => (
-          <Link key={startup.id} to={`/startups/${startup.id}`} className="block focus:outline-none focus:ring-2 focus:ring-primary rounded">
-            <Card key={startup.id} className="hover:shadow-lg transition-shadow duration-300">
-              <CardHeader>
-                <div className="flex items-start space-x-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span className="text-white font-bold text-lg">
-                      {startup.name.split(' ').map(n => n[0]).join('')}
-                    </span>
+          <Card key={startup.id} className="mb-8 shadow-lg">
+            <CardContent className="p-6 flex-1 flex flex-col">
+              <div className="flex items-start space-x-4">
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <span className="text-white font-bold text-lg">
+                    {startup.name.split(' ').map(n => n[0]).join('')}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-2 mb-1">
+                    <CardTitle className="text-lg truncate">{startup.name}</CardTitle>
+                    <Badge variant="default">{startup.stage}</Badge>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <CardTitle className="text-lg truncate">{startup.name}</CardTitle>
-                      <Badge variant="default">{startup.stage}</Badge>
+                  <p className="text-sm text-gray-600 mb-2">{startup.tagline}</p>
+                  <div className="flex items-center space-x-4 text-xs text-gray-500">
+                    <div className="flex items-center">
+                      <MapPin className="w-3 h-3 mr-1" />
+                      <span>{startup.location}</span>
                     </div>
-                    <p className="text-sm text-gray-600 mb-2">{startup.tagline}</p>
-                    <div className="flex items-center space-x-4 text-xs text-gray-500">
-                      <div className="flex items-center">
-                        <MapPin className="w-3 h-3 mr-1" />
-                        <span>{startup.location}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <Calendar className="w-3 h-3 mr-1" />
-                        <span>Est. {startup.founded}</span>
-                      </div>
+                    <div className="flex items-center">
+                      <Calendar className="w-3 h-3 mr-1" />
+                      <span>Est. {startup.founded}</span>
                     </div>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
+              </div>
+              <div className="space-y-4">
                 <p className="text-gray-700 text-sm leading-relaxed">{startup.description}</p>
                 <div>
                   <span className="font-medium text-xs text-gray-500">Mission: </span>{startup.mission}
@@ -478,9 +476,9 @@ const Startups = () => {
                   </Button>
                 )}
                 {user && hasApplied(startup.id) && <span className="text-xs text-blue-500">Applied</span>}
-              </CardContent>
-            </Card>
-          </Link>
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
       {/* Application Modal */}

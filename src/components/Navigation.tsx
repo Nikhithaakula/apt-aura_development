@@ -19,7 +19,8 @@ import {
   Briefcase,
   Rocket,
   MessageSquare,
-  Users // Add Users icon
+  Users, // Add Users icon
+  Info // Add Info icon
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -35,6 +36,7 @@ export const Navigation = () => {
     { name: "Startups", href: "/startups", icon: Rocket },
     { name: "Feed", href: "/feed", icon: MessageSquare },
     { name: "Community", href: "/community", icon: Users }, // Add Community link
+    { name: "About", href: "/about", icon: Info },
   ];
 
   const isActive = (href: string) => location.pathname === href;
@@ -50,9 +52,9 @@ export const Navigation = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-green-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">E</span>
+              <span className="text-white font-bold text-sm">A</span>
             </div>
-            <span className="text-xl font-bold text-gray-900">EcoSystem</span>
+            <span className="text-xl font-bold text-gray-900">apt-aura</span>
           </Link>
 
           {/* Desktop Navigation */}
