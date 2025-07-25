@@ -9,11 +9,35 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useParams } from "react-router-dom";
 
+// Add a type for the profile data to include all used fields
+type ProfileData = {
+  id: string;
+  full_name: string;
+  role: string;
+  location?: string;
+  website?: string;
+  bio?: string;
+  statement_of_purpose?: string;
+  future_vision?: string;
+  short_term_goals?: string;
+  long_term_goals?: string;
+  field_of_interest?: string;
+  true_passion?: string;
+  skills?: string[];
+  skills_to_learn?: string[];
+  interests?: string[];
+  resume_url?: string | null;
+  created_at?: string;
+  avatar_url?: string;
+  updated_at?: string;
+  stats?: any;
+};
+
 const Profile = () => {
   const { user } = useAuth();
   const { id } = useParams();
   const [isEditing, setIsEditing] = useState(false);
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState<any>({});
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -34,23 +58,23 @@ const Profile = () => {
       const { data, error } = await supabase.from("profiles").select("*").eq("id", profileId).single();
       setProfile(data);
       setForm({
-        full_name: data?.full_name || "",
-        role: data?.role || "",
-        location: data?.location || "",
-        website: data?.website || "",
-        bio: data?.bio || "",
-        statement_of_purpose: data?.statement_of_purpose || "",
-        future_vision: data?.future_vision || "",
-        short_term_goals: data?.short_term_goals || "",
-        long_term_goals: data?.long_term_goals || "",
-        field_of_interest: data?.field_of_interest || "",
-        true_passion: data?.true_passion || "",
-        skills: data?.skills || [],
-        skills_to_learn: data?.skills_to_learn || [],
-        interests: data?.interests || [],
-        resume_url: data?.resume_url || null,
+        full_name: data?.full_name ?? "",
+        role: data?.role ?? "",
+        location: (data as ProfileData)?.location ?? "",
+        website: (data as ProfileData)?.website ?? "",
+        bio: data?.bio ?? "",
+        statement_of_purpose: (data as ProfileData)?.statement_of_purpose ?? "",
+        future_vision: (data as ProfileData)?.future_vision ?? "",
+        short_term_goals: (data as ProfileData)?.short_term_goals ?? "",
+        long_term_goals: (data as ProfileData)?.long_term_goals ?? "",
+        field_of_interest: (data as ProfileData)?.field_of_interest ?? "",
+        true_passion: (data as ProfileData)?.true_passion ?? "",
+        skills: (data as ProfileData)?.skills ?? [],
+        skills_to_learn: (data as ProfileData)?.skills_to_learn ?? [],
+        interests: (data as ProfileData)?.interests ?? [],
+        resume_url: (data as ProfileData)?.resume_url ?? null,
       });
-      setResumeUrl(data?.resume_url || null);
+      setResumeUrl((data as any)?.resume_url || null);
       setLoading(false);
     };
     fetchProfile();
@@ -90,17 +114,22 @@ const Profile = () => {
     if (!user) return;
     // Fetch approved achievements
     const fetchAchievements = async () => {
-      const { data } = await supabase
-        .from("achievement_requests")
+      const { data, error } = await supabase
+        .from("achievement_requests" as any)
         .select("*")
         .eq("user_id", user.id)
         .eq("status", "approved");
-      setAchievements(data || []);
+      if (error) {
+        console.error("Error fetching achievements:", error);
+        setAchievements([]);
+      } else {
+        setAchievements(data || []);
+      }
     };
     // Fetch pending requests (for admins, or for user to see their own requests)
     const fetchRequests = async () => {
-      const { data } = await supabase
-        .from("achievement_requests")
+      const { data, error } = await supabase
+        .from("achievement_requests" as any)
         .select("*")
         .eq("user_id", user.id)
         .eq("status", "pending");
@@ -213,7 +242,7 @@ const Profile = () => {
                   </div>
                   <div className="flex items-center">
                     <Mail className="w-4 h-4 mr-1" />
-                    <span>{user.email}</span>
+                    <span>{canEdit ? <input name="email" value={user.email} readOnly className="bg-gray-100 rounded px-2 py-1" placeholder="user@email.com" /> : "user@email.com"}</span>
                   </div>
                   <div className="flex items-center">
                     <LinkIcon className="w-4 h-4 mr-1" />
@@ -241,7 +270,7 @@ const Profile = () => {
           </div>
           <div className="mt-6 pt-6 border-t border-gray-200">
             {canEdit ? (
-              <textarea name="bio" value={form.bio} onChange={handleChange} className="w-full bg-gray-100 rounded px-2 py-1" rows={3} placeholder="Your bio..." />
+              <textarea name="Think like a cover letter but write your heart out in professional space " value={form.bio} onChange={handleChange} className="w-full bg-gray-100 rounded px-2 py-1" rows={3} placeholder="Your bio..." />
             ) : (
               <p className="text-gray-700 leading-relaxed">{form.bio}</p>
             )}
@@ -477,6 +506,7 @@ const Profile = () => {
               if (!newAchievement.trim()) return;
               await supabase.from("achievement_requests").insert({
                 user_id: user.id,
+                title: newAchievement.trim(),
                 description: newAchievement.trim(),
                 status: "pending"
               });
