@@ -242,7 +242,22 @@ const Profile = () => {
                   </div>
                   <div className="flex items-center">
                     <Mail className="w-4 h-4 mr-1" />
-                    <span>{canEdit ? <input name="email" value={user.email} readOnly className="bg-gray-100 rounded px-2 py-1" placeholder="user@email.com" /> : "user@email.com"}</span>
+                    {canEdit ? (
+                      <span>{user.email}</span>
+                    ) : (
+                      <>
+                        <span className="text-gray-400 italic mr-2">user@hidden.com</span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            alert("Email request sent! The user will be notified.");
+                          }}
+                        >
+                          Request Email
+                        </Button>
+                      </>
+                    )}
                   </div>
                   <div className="flex items-center">
                     <LinkIcon className="w-4 h-4 mr-1" />
