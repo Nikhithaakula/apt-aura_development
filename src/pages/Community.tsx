@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,22 +7,29 @@ import { Link } from "react-router-dom";
 const Community = () => {
   const [members, setMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Fetch members, optionally filtered by username
+  const fetchMembers = async (query = "") => {
+    setLoading(true);
+    let supabaseQuery = supabase
+      .from("profiles")
+      .select("id, full_name, role, skills");
+    if (query) {
+      supabaseQuery = supabaseQuery.ilike("full_name", `%${query}%`);
+    }
+    const { data, error } = await supabaseQuery;
+    if (!error && data) setMembers(data);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const fetchMembers = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, role, skills");
-      if (!error && data) setMembers(data);
-      setLoading(false);
-    };
     fetchMembers();
 
     // Real-time updates
     const subscription = supabase
       .channel('public:profiles')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, fetchMembers)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => fetchMembers(searchQuery))
       .subscribe();
 
     return () => {
@@ -30,12 +37,37 @@ const Community = () => {
     };
   }, []);
 
+  // Handle search
+  const handleSearch = (e?: React.FormEvent<HTMLFormElement>) => {
+    if (e) e.preventDefault();
+    fetchMembers(searchQuery);
+  };
+
   return (
     <div className="max-w-6xl mx-auto py-12 px-4">
       <h2 className="text-3xl font-bold text-center mb-2">Meet Our Community</h2>
       <p className="text-center text-gray-500 mb-8">
         Connect with talented individuals from diverse backgrounds and expertise
       </p>
+      {/* Search Bar */}
+      <form
+        className="flex flex-col sm:flex-row justify-center mb-8 gap-3 sm:gap-2"
+        onSubmit={handleSearch}
+      >
+        <input
+          type="text"
+          placeholder="Search by username..."
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          className="w-full sm:w-100 px-5 py-2 rounded-full border border-gray-200 bg-gray-50 text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition placeholder-gray-400"
+        />
+        <button
+          type="submit"
+          className="px-6 py-2 rounded-full bg-gradient-to-r from-blue-500 to-green-400 text-white font-semibold shadow hover:from-blue-600 hover:to-green-500 active:scale-95 transition-all duration-150"
+        >
+          Search
+        </button>
+      </form>
       {loading ? (
         <div className="text-center text-gray-400">Loading...</div>
       ) : (
