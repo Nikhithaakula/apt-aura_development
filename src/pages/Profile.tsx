@@ -217,12 +217,12 @@ const Profile = () => {
                 </span>
               </div>
               <div>
-                {canEdit ? (
+                {canEdit && isEditing ? (
                   <input name="full_name" value={form.full_name} onChange={handleChange} className="text-3xl font-bold text-gray-900 mb-2 bg-gray-100 rounded px-2 py-1" />
                 ) : (
                   <h1 className="text-3xl font-bold text-gray-900 mb-2">{form.full_name}</h1>
                 )}
-                {canEdit ? (
+                {canEdit && isEditing ? (
                   <input name="role" value={form.role} onChange={handleChange} className="text-xl text-gray-600 mb-3 bg-gray-100 rounded px-2 py-1" />
                 ) : (
                   <p className="text-xl text-gray-600 mb-3">{form.role}</p>
@@ -230,7 +230,7 @@ const Profile = () => {
                 <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
                   <div className="flex items-center">
                     <MapPin className="w-4 h-4 mr-1" />
-                    {canEdit ? (
+                    {canEdit && isEditing ? (
                       <input name="location" value={form.location} onChange={handleChange} className="bg-gray-100 rounded px-2 py-1" />
                     ) : (
                       <span>{form.location}</span>
@@ -261,7 +261,7 @@ const Profile = () => {
                   </div>
                   <div className="flex items-center">
                     <LinkIcon className="w-4 h-4 mr-1" />
-                    {canEdit ? (
+                    {canEdit && isEditing ? (
                       <input name="website" value={form.website} onChange={handleChange} className="bg-gray-100 rounded px-2 py-1" />
                     ) : (
                       <span>{form.website}</span>
@@ -284,8 +284,8 @@ const Profile = () => {
             </div>
           </div>
           <div className="mt-6 pt-6 border-t border-gray-200">
-            {canEdit ? (
-              <textarea name="Think like a cover letter but write your heart out in professional space " value={form.bio} onChange={handleChange} className="w-full bg-gray-100 rounded px-2 py-1" rows={3} placeholder="Your bio..." />
+            {canEdit && isEditing ? (
+              <textarea name="bio" value={form.bio} onChange={handleChange} className="w-full bg-gray-100 rounded px-2 py-1" rows={3} placeholder="Briefly share how you started, where you are now, and what you aim to achieve" />
             ) : (
               <p className="text-gray-700 leading-relaxed">{form.bio}</p>
             )}
@@ -294,7 +294,7 @@ const Profile = () => {
           <div className="mt-6 grid md:grid-cols-2 gap-6">
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">Statement of Purpose</h3>
-              {canEdit ? (
+              {canEdit && isEditing ? (
                 <textarea name="statement_of_purpose" value={form.statement_of_purpose} onChange={handleChange} className="w-full bg-gray-100 rounded px-2 py-1" rows={2} placeholder="Why are you here?" />
               ) : (
                 <p className="text-gray-700">{form.statement_of_purpose}</p>
@@ -302,7 +302,7 @@ const Profile = () => {
             </div>
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">Future Vision</h3>
-              {canEdit ? (
+              {canEdit && isEditing ? (
                 <textarea name="future_vision" value={form.future_vision} onChange={handleChange} className="w-full bg-gray-100 rounded px-2 py-1" rows={2} placeholder="How do you see yourself in the future?" />
               ) : (
                 <p className="text-gray-700">{form.future_vision}</p>
@@ -310,7 +310,7 @@ const Profile = () => {
             </div>
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">Short Term Goals</h3>
-              {canEdit ? (
+              {canEdit && isEditing ? (
                 <textarea name="short_term_goals" value={form.short_term_goals} onChange={handleChange} className="w-full bg-gray-100 rounded px-2 py-1" rows={2} placeholder="Your short term goals..." />
               ) : (
                 <p className="text-gray-700">{form.short_term_goals}</p>
@@ -318,7 +318,7 @@ const Profile = () => {
             </div>
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">Long Term Goals</h3>
-              {canEdit ? (
+              {canEdit && isEditing ? (
                 <textarea name="long_term_goals" value={form.long_term_goals} onChange={handleChange} className="w-full bg-gray-100 rounded px-2 py-1" rows={2} placeholder="Your long term goals..." />
               ) : (
                 <p className="text-gray-700">{form.long_term_goals}</p>
@@ -326,7 +326,7 @@ const Profile = () => {
             </div>
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">Field of Interest</h3>
-              {canEdit ? (
+              {canEdit && isEditing ? (
                 <input name="field_of_interest" value={form.field_of_interest} onChange={handleChange} className="w-full bg-gray-100 rounded px-2 py-1" placeholder="e.g. AI, Sustainability, EdTech..." />
               ) : (
                 <p className="text-gray-700">{form.field_of_interest}</p>
@@ -334,7 +334,7 @@ const Profile = () => {
             </div>
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">True Passion</h3>
-              {canEdit ? (
+              {canEdit && isEditing ? (
                 <input name="true_passion" value={form.true_passion} onChange={handleChange} className="w-full bg-gray-100 rounded px-2 py-1" placeholder="What drives you?" />
               ) : (
                 <p className="text-gray-700">{form.true_passion}</p>
@@ -345,7 +345,7 @@ const Profile = () => {
           <div className="mt-6 grid md:grid-cols-2 gap-6">
             <div>
               <h3 className="font-semibold text-gray-900 mb-3">Skills</h3>
-              {canEdit ? (
+              {canEdit && isEditing ? (
                 <input name="skills" value={form.skills?.join(", ") || ""} onChange={handleSkillsChange} className="w-full bg-gray-100 rounded px-2 py-1" placeholder="e.g. React, Node.js, Python..." />
               ) : (
                 <div className="flex flex-wrap gap-2">
@@ -357,7 +357,7 @@ const Profile = () => {
             </div>
             <div>
               <h3 className="font-semibold text-gray-900 mb-3">Skills to Learn</h3>
-              {canEdit ? (
+              {canEdit && isEditing ? (
                 <input name="skills_to_learn" value={form.skills_to_learn?.join(", ") || ""} onChange={handleSkillsToLearnChange} className="w-full bg-gray-100 rounded px-2 py-1" placeholder="e.g. Go, Rust, Blockchain..." />
               ) : (
                 <div className="flex flex-wrap gap-2">
@@ -369,7 +369,7 @@ const Profile = () => {
             </div>
             <div>
               <h3 className="font-semibold text-gray-900 mb-3">Interests</h3>
-              {canEdit ? (
+              {canEdit && isEditing ? (
                 <input name="interests" value={form.interests?.join(", ") || ""} onChange={handleInterestsChange} className="w-full bg-gray-100 rounded px-2 py-1" placeholder="e.g. Sustainability, Open Source..." />
               ) : (
                 <div className="flex flex-wrap gap-2">
@@ -381,7 +381,7 @@ const Profile = () => {
             </div>
             <div>
               <h3 className="font-semibold text-gray-900 mb-3">Resume</h3>
-              {canEdit ? (
+              {canEdit && isEditing ? (
                 <div className="flex items-center gap-2">
                   <input type="file" accept=".pdf,.doc,.docx" onChange={handleResumeChange} />
                   {resumeUrl && (
